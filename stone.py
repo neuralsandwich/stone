@@ -22,9 +22,6 @@ class Page(object):
 
 
 class SiteConfig(object):
-
-    site_config_file = "site.json"
-
     def __init__(self, root, data):
         self.root = root
         self.pages = []
@@ -38,13 +35,41 @@ class SiteConfig(object):
     def _parse(self, data):
         """Load pages to be generated"""
         try:
-            self.pages = [Page(self.root, **page)
-                          for page in data["pages"]]
+            self.pages = [Page(self.root, **page) for page in data["pages"]]
             self.templates = [os.path.join(self.root, template)
                               for template in data["templates"]]
         except KeyError as ke:
             if ke is 'templates':
-                print("No temaplates found for %s" %(data["site"]))
+                print("No temaplates found for %s" % (data["site"]))
+
+
+class ConfigLoader(object):
+
+    site_config_file = "site.json"
+
+    def __init__(self):
+        pass
+
+    def load(self, path):
+        configs = []
+        try:
+            json_data = json.loads(
+                open(os.path.join(path, self.site_config_file), "r")
+                .read())
+        except FileNotFoundError as fnf:
+            if fnf.errno != errno.ENOENT:
+                raise
+            else:
+                print("Error: No path to site config")
+                return 1
+
+        try:
+            for site_data in json_data["sites"]:
+                configs.append(SiteConfig(path, site_data))
+        except KeyError:
+            configs.append(SiteConfig(path, site_data))
+
+        return configs
 
 
 def main(args):
@@ -54,25 +79,9 @@ def main(args):
 
     site_root = args[1] if os.path.isdir(args[1]) else None
 
-    site_configs = {}
-    try:
-        json_data = json.loads(
-            open(os.path.join(site_root, SiteConfig.site_config_file), "r")
-            .read())
-    except FileNotFoundError as fnf:
-        if fnf.errno != errno.ENOENT:
-            raise
-        else:
-            print("Error: No path to site config")
-            return 1
-
-    try:
-        for site_data in json_data["sites"]:
-            site_configs[site_data["site"]] = SiteConfig(site_root, site_data)
-    except KeyError:
-        site_configs[site_data["site"]] = SiteConfig(site_root, site_data)
-
-    for site in site_configs.values():
+    cfg_loader = ConfigLoader()
+    site_configs = cfg_loader.load(site_root)
+    for site in site_configs:
         for page in site.pages:
             html = markdown.markdown(str(page))
             try:
