@@ -4,7 +4,7 @@ import errno
 import os
 import sys
 
-from jinja2 import Environment, DictLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 import json
 import markdown
 
@@ -23,8 +23,9 @@ class Page(object):
 
 class SiteConfig(object):
     def __init__(self, root, data):
-        self.root = root
         self.pages = []
+        self.root = root
+        self.templates = []
         self.template = []
         self.data = data
         self._parse(data)
@@ -54,8 +55,7 @@ class ConfigLoader(object):
         configs = []
         try:
             json_data = json.loads(
-                open(os.path.join(path, self.site_config_file), "r")
-                .read())
+                open(os.path.join(path, self.site_config_file), "r").read())
         except FileNotFoundError as fnf:
             if fnf.errno != errno.ENOENT:
                 raise
@@ -82,11 +82,15 @@ def main(args):
     cfg_loader = ConfigLoader()
     site_configs = cfg_loader.load(site_root)
     for site in site_configs:
+        env = Environment(
+            loader=FileSystemLoader(site.templates),
+            autoescape=select_autoescape(["html", "xml"]))
+
         for page in site.pages:
-            html = markdown.markdown(str(page))
+            rendered_html = markdown.markdown(str(page))
             try:
                 target_file = open(page.target, "w")
-                target_file.write(html)
+                target_file.write(rendered_html)
                 target_file.close()
             except FileNotFoundError as fnf:
                 if fnf.errno != errno.ENOENT:
