@@ -90,7 +90,7 @@ def main(args):
             rendered_html = markdown.markdown(str(page))
             try:
                 target_file = open(page.target, "w")
-                target_file.write(rendered_html)
+                target_file.write(env.from_string(rendered_html).render())
                 target_file.close()
             except FileNotFoundError as fnf:
                 if fnf.errno != errno.ENOENT:
