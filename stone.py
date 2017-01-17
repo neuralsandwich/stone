@@ -12,12 +12,20 @@ import markdown
 
 
 class Page(collections.UserDict):
-    def __init__(self, site_root, source, target, redirects=None):
+    def __init__(self,
+                 site_root,
+                 source,
+                 target,
+                 page_type=None,
+                 redirects=None):
         self.data = {}
-        self.source = source
-        self.target = target
+        self.data['page_type'] = page_type
+        self.data['redirects'] = redirects
         self.source_path = os.path.join(site_root, source)
         self.target_path = os.path.join(site_root, target)
+        self.source = source
+        self.target = target
+        self.href = self.target.split('/')[1]
         self.data['content'] = open(self.source_path, "r").read()
 
     def __contains__(self, key):
@@ -32,25 +40,44 @@ class Page(collections.UserDict):
     def __repr__(self):
         return "Page(%r, %r)" % (self.source, self.target)
 
-    def __str__(self):
-        return self.data['content']
-        return
     def __setitem__(self, key, item):
         self.data[str(key)] = item
 
-    def md_to_template_html(self, md_renderer):
+    def convert_to_template_html(self, md_renderer):
         self.renderer = md_renderer
-        self['content'] = self.renderer.convert(str(self))
+        self['content'] = self.renderer.convert(self['content'])
         for key, value in self.renderer.Meta.items():
             if isinstance(value, list) and len(value) == 1:
                 self.data[key] = value[0]
             else:
                 self.data[key] = value
 
+    def render_html(self, environment):
+        print("Rendering: %s to %s" % (self.source_path, self.target_path))
+        try:
+            with open(self.target_path, "w") as target_file:
+                target_file.write(
+                    environment.get_template(self['template']).render(self))
+        except TemplateNotFound as tnf:
+            print(tnf)
+        except KeyError as ke:
+            if str(ke) == '\'template\'':
+                print('Missing template, rendering markdown only')
+                environment.from_string(self['content']).render(self)
+            else:
+                raise
+        except FileNotFoundError as fnf:
+            if fnf.errno != errno.ENOENT:
+                raise
+            else:
+                os.makedirs(os.path.split(self.target_path)[0])
+                self.render_html(environment)
 
-class SiteConfig(object):
+
+class Site(object):
     def __init__(self, root, data):
         self.pages = []
+        self.index = []
         self.root = root
         self.templates = []
         self.template = []
@@ -69,6 +96,25 @@ class SiteConfig(object):
         except KeyError as ke:
             if ke is 'templates':
                 print("No temaplates found for %s" % (data["site"]))
+
+    def is_blog(self):
+        try:
+            return self.data['type'] == 'blog'
+        except KeyError as ke:
+            return False
+
+    def render(self, renderer, environment):
+        """Render Markdown to HTML and extract YAML metadata"""
+        for page in self.pages:
+            page.convert_to_template_html(renderer)
+            """
+            Pages to know their titles, this comes from their YAML metadata
+            """
+        for page in self.pages:
+            if page['page_type'] == "index":
+                page['posts'] = [post for post in self.pages
+                                 if post is not page]
+            page.render_html(environment)
 
 
 class ConfigLoader(object):
@@ -92,9 +138,9 @@ class ConfigLoader(object):
 
         try:
             for site_data in json_data["sites"]:
-                configs.append(SiteConfig(path, site_data))
+                configs.append(Site(path, site_data))
         except KeyError:
-            configs.append(SiteConfig(path, site_data))
+            configs.append(Site(path, site_data))
 
         return configs
 
@@ -107,36 +153,15 @@ def main(args):
     site_root = args[1] if os.path.isdir(args[1]) else None
 
     cfg_loader = ConfigLoader()
-    site_configs = cfg_loader.load(site_root)
+    sites = cfg_loader.load(site_root)
     markdown_renderer = markdown.Markdown(
         extensions=['markdown.extensions.meta'])
-    for site in site_configs:
+    for site in sites:
         env = Environment(
             loader=FileSystemLoader(site.templates),
             autoescape=select_autoescape(["html", "xml"]))
 
-        for page in site.pages:
-            page.md_to_template_html(markdown_renderer)
-            print("Rendering: %s to %s" % (page.source, page.target))
-            try:
-                with open(page.target_path, "w") as target_file:
-                    target_file.write(
-                    env.get_template(page['template']).render(page))
-            except TemplateNotFound as tnf:
-                print(tnf)
-            except KeyError as ke:
-                if str(ke) == '\'template\'':
-                    print('Missing template, rendering markdown only')
-                    env.from_string(page.content).render(page)
-                else:
-                    raise
-            except FileNotFoundError as fnf:
-                if fnf.errno != errno.ENOENT:
-                    raise
-                else:
-                    target_path = os.path.split(page.target)[0]
-                    if os.path.isdir(target_path) is False:
-                        os.makedirs(target_path)
+        site.render(markdown_renderer, env)
 
     return 0
 
