@@ -22,9 +22,9 @@ class Page(collections.UserDict):
             "page_type": page_type,
             "redirects": redirects,
             "source": source,
-            "source_path": os.path.join(site_root, source),
+            "source_path": os.path.abspath(os.path.join(site_root, source)),
             "target": target,
-            "target_path": os.path.join(site_root, target),
+            "target_path": os.path.abspath(os.path.join(site_root, target)),
             "href": target.split('/')[1]
         }
         self.data['content'] = open(self.data['source_path'], "r").read()
@@ -70,7 +70,7 @@ class Page(collections.UserDict):
                 raise
         except FileNotFoundError as fnf:
             if fnf.errno == errno.ENOENT:
-                os.makedirs(os.path.split(self.data['target_path')[0])
+                os.makedirs(os.path.split(self.data['target_path'])[0])
                 self.render_html(environment)
             else:
                 raise
@@ -157,8 +157,7 @@ def main(args):
 
     site_root = args[1] if os.path.isdir(args[1]) else None
 
-    cfg_loader = ConfigLoader()
-    sites = cfg_loader.load(site_root)
+    sites = ConfigLoader().load(site_root)
     markdown_renderer = markdown.Markdown(
         extensions=['markdown.extensions.meta'])
     for site in sites:
