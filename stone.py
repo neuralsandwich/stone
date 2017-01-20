@@ -18,15 +18,16 @@ class Page(collections.UserDict):
                  target,
                  page_type=None,
                  redirects=None):
-        self.data = {}
-        self.data['page_type'] = page_type
-        self.data['redirects'] = redirects
-        self.source_path = os.path.join(site_root, source)
-        self.target_path = os.path.join(site_root, target)
-        self.source = source
-        self.target = target
-        self.href = self.target.split('/')[1]
-        self.data['content'] = open(self.source_path, "r").read()
+        self.data = {
+            "page_type": page_type,
+            "redirects": redirects,
+            "source": source,
+            "source_path": os.path.join(site_root, source),
+            "target": target,
+            "target_path": os.path.join(site_root, target),
+            "href": target.split('/')[1]
+        }
+        self.data['content'] = open(self.data['source_path'], "r").read()
 
     def __contains__(self, key):
         return str(key) in self.data
@@ -53,9 +54,10 @@ class Page(collections.UserDict):
                 self.data[key] = value
 
     def render_html(self, environment):
-        print("Rendering: %s to %s" % (self.source_path, self.target_path))
+        print("Rendering: %s to %s" % (self.data['source_path'],
+                                       self.data['target_path']))
         try:
-            with open(self.target_path, "w") as target_file:
+            with open(self.data['target_path'], "w") as target_file:
                 target_file.write(
                     environment.get_template(self['template']).render(self))
         except TemplateNotFound as tnf:
@@ -67,11 +69,11 @@ class Page(collections.UserDict):
             else:
                 raise
         except FileNotFoundError as fnf:
-            if fnf.errno != errno.ENOENT:
-                raise
-            else:
-                os.makedirs(os.path.split(self.target_path)[0])
+            if fnf.errno == errno.ENOENT:
+                os.makedirs(os.path.split(self.data['target_path')[0])
                 self.render_html(environment)
+            else:
+                raise
 
 
 class Site(object):
@@ -80,7 +82,6 @@ class Site(object):
         self.index = []
         self.root = root
         self.templates = []
-        self.template = []
         self.data = data
         self._parse(data)
 
@@ -112,6 +113,10 @@ class Site(object):
             """
         for page in self.pages:
             if page['page_type'] == "index":
+                """
+                Pass all blog posts to the index page, do not pass other indexes
+                or page types to the index.
+                """
                 page['posts'] = [post for post in self.pages
                                  if post is not page]
             page.render_html(environment)
