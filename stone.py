@@ -119,6 +119,7 @@ class Site(object):
                 """
                 page['posts'] = [post for post in self.pages
                                  if post is not page]
+                page['posts'].reverse()
             page.render_html(environment)
 
 
