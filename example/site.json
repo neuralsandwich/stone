@@ -1,0 +1,14 @@
+{"sites": [
+    {
+        "root": "example",
+        "pages": [
+            {
+                "source": "./README.md",
+                "target": "./README.html"
+            }
+        ],
+        "templates": [
+            "templates"
+        ]
+    }
+]}
