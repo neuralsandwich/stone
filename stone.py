@@ -24,9 +24,12 @@ class Page(collections.UserDict):
             "source": source,
             "source_path": os.path.abspath(os.path.join(site_root, source)),
             "target": target,
-            "target_path": os.path.abspath(os.path.join(site_root, target)),
-            "href": target.split('/')[1]
+            "target_path": os.path.abspath(os.path.join(site_root, target))
         }
+        try:
+            self.data["href"] = target.split('/')[1]
+        except IndexError:
+            self.data["href"] = target
         self.data['content'] = open(self.data['source_path'], "r").read()
 
     def __contains__(self, key):

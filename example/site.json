@@ -1,14 +1,14 @@
-{"sites": [
+{
+  "sites": [
     {
-        "root": "example",
-        "pages": [
-            {
-                "source": "./README.md",
-                "target": "./README.html"
-            }
-        ],
-        "templates": [
-            "templates"
-        ]
+      "site": "example.com",
+      "pages": [
+        {
+          "source": "README.md",
+          "target": "README.html"
+        }
+      ],
+      "templates": ["templates"]
     }
-]}
+  ]
+}
