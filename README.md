@@ -71,7 +71,7 @@ There are additional attributes:
 
 * date - Adds the date the page was create to the page metadata. This is
   currently used when generating indexes for blogs. Format YYYY-MM-DD
-* 
+
 ## Templates
 
 Templates support **jinja2**, an example:
