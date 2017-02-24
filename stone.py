@@ -9,7 +9,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from jinja2.exceptions import TemplateNotFound
 import json
 import markdown
-
+from css_html_js_minify import css_minify, html_minify
 
 class Page(collections.UserDict):
     def __init__(self,
@@ -39,7 +39,7 @@ class Page(collections.UserDict):
             raise KeyError(key)
 
     def __repr__(self):
-        return "Page(%r, %r)" % (self.source, self.target)
+        return "Page(%r, %r)" % (self.data['source'], self.data['target'])
 
     def __setitem__(self, key, item):
         self.data[str(key)] = item
@@ -59,7 +59,8 @@ class Page(collections.UserDict):
         try:
             with open(self.data['target_path'], "w") as target_file:
                 target_file.write(
-                    environment.get_template(self['template']).render(self))
+                    html_minify(environment.get_template(self['template']).render(self))
+                )
         except TemplateNotFound as tnf:
             print(tnf)
         except KeyError as ke:
@@ -70,18 +71,64 @@ class Page(collections.UserDict):
                 raise
         except FileNotFoundError as fnf:
             if fnf.errno == errno.ENOENT:
-                os.makedirs(os.path.split(self.data['target_path'])[0])
+                os.makedirs(os.path.split(self.data['target_path'])[0], exist_ok=True)
                 self.render_html(environment)
             else:
                 raise
 
+class Resource(collections.UserDict):
+    def __init__(self,
+                 site_root,
+                 source,
+                 target,
+                 resource_type=None):
+        self.data = {
+            "resource_type": resource_type,
+            "source": source,
+            "source_path": os.path.abspath(os.path.join(site_root, source)),
+            "target": target,
+            "target_path": os.path.abspath(os.path.join(site_root, target)),
+            "href": target.split('/')[1]
+        }
+        with open(self.data["source_path"], "r") as source_file:
+            self.data["content"] = source_file.read()
 
+    def __contains__(self, key):
+        return str(key) in self.data
+
+    def __missing__(self, key):
+        if str(key) in self.data:
+            return self.data
+        else:
+            raise KeyError(key)
+
+    def __repr__(self):
+        return "Resource(%r, %r)" % (self.data['source'], self.data['target'])
+
+    def __setitem__(self, key, item):
+        self.data[str(key)] = item
+
+    def render(self):
+        print("Rendering: %s to %s" % (self.data['source_path'],
+                                       self.data['target_path']))
+        try:
+            with open(self.data['target_path'], "w") as target_file:
+                target_file.write(
+                    css_minify(self.data["content"])
+                )
+        except FileNotFoundError as fnf:
+            if fnf.errno == errno.ENOENT:
+                os.makedirs(os.path.split(self.data['target_path'])[0], exist_ok=True)
+                self.render()
+            else:
+                raise
 class Site(object):
     def __init__(self, root, data):
         self.pages = []
         self.index = []
         self.root = root
         self.templates = []
+        self.resources = []
         self.data = data
         self._parse(data)
 
@@ -94,6 +141,8 @@ class Site(object):
             self.pages = [Page(self.root, **page) for page in data["pages"]]
             self.templates = [os.path.join(self.root, template)
                               for template in data["templates"]]
+            self.resources = [Resource(self.root, **resource) for resource in data["resources"]]
+            print(self.resources)
         except KeyError as ke:
             if ke is 'templates':
                 print("No temaplates found for %s" % (data["site"]))
@@ -112,6 +161,7 @@ class Site(object):
             Pages to know their titles, this comes from their YAML metadata
             """
         for page in self.pages:
+            print(page)
             if page['page_type'] == "index":
                 """
                 Pass all blog posts to the index page, do not pass other indexes
@@ -122,6 +172,8 @@ class Site(object):
                 page['posts'].reverse()
             page.render_html(environment)
 
+        for resource in self.resources:
+            resource.render()
 
 class ConfigLoader(object):
 
