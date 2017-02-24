@@ -4,8 +4,9 @@ template: base.html
 # stone
 Static website generator for half.systems
 
-#Usage
-You may define site structures within the **site.json** file. The file should contain an object that holds a list
+# Usage
+You may define site structures within the **site.json** file. The file should
+contain an object that holds a list
 of site definitions in the following format:
 
 ```json
@@ -19,7 +20,8 @@ of site definitions in the following format:
             }
         ],
         "templates": [
-            "folders under the site root that contain jinja2 format template files"
+            "folders under the site root that contain jinja2 format template
+            files"
         ]
       },
       ...
@@ -35,8 +37,9 @@ Site projects should be structured as follows:
     - structured folders holding page markdown
     
 ## Pages
-The source markdown files should consist of simple markdown with a YAML header that describe the attributes of the generated page
-including the page title and the template it uses. For example:
+The source markdown files should consist of simple markdown with a YAML header
+that describe the attributes of the generated page including the page title and
+the template it uses. For example:
 
 ```
 page_title: TEST
@@ -45,7 +48,8 @@ template: base.html
 # This is some content
 ```
 ## Templates
-Templates are **jinja2**, for rendering the markdown source they should contain a content tag like:
+Templates are **jinja2**, for rendering the markdown source they should contain
+a content tag like:
 
 ```{{ content|safe }}```
 
@@ -56,12 +60,14 @@ They should also contain a title tag like:
 within the HTML head.
 
 ## Generating
-To generate a particular site invoke stone.py with the location of the project's root folder. 
+To generate a particular site invoke stone.py with the location of the project's
+root folder. 
 
 ```python stone.py root_folder```
 
 ### Example
-An example project that generates an html version of this README can be found in the example folder.
+An example project that generates an html version of this README can be found in
+the example folder.
 
 You can build it by running:
 
