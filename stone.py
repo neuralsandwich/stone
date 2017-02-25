@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import collections
 import errno
 import os
@@ -10,6 +11,7 @@ from jinja2.exceptions import TemplateNotFound
 import json
 import markdown
 from css_html_js_minify import css_minify, html_minify
+
 
 class Page(collections.UserDict):
     def __init__(self,
@@ -62,8 +64,9 @@ class Page(collections.UserDict):
         try:
             with open(self.data['target_path'], "w") as target_file:
                 target_file.write(
-                    html_minify(environment.get_template(self['template']).render(self))
-                )
+                    html_minify(
+                        environment.get_template(self['template']).render(
+                            self)))
         except TemplateNotFound as tnf:
             print(tnf)
         except KeyError as ke:
@@ -74,17 +77,15 @@ class Page(collections.UserDict):
                 raise
         except FileNotFoundError as fnf:
             if fnf.errno == errno.ENOENT:
-                os.makedirs(os.path.split(self.data['target_path'])[0], exist_ok=True)
+                os.makedirs(
+                    os.path.split(self.data['target_path'])[0], exist_ok=True)
                 self.render_html(environment)
             else:
                 raise
 
+
 class Resource(collections.UserDict):
-    def __init__(self,
-                 site_root,
-                 source,
-                 target,
-                 resource_type=None):
+    def __init__(self, site_root, source, target, resource_type=None):
         self.data = {
             "resource_type": resource_type,
             "source": source,
@@ -116,15 +117,16 @@ class Resource(collections.UserDict):
                                        self.data['target_path']))
         try:
             with open(self.data['target_path'], "w") as target_file:
-                target_file.write(
-                    css_minify(self.data["content"])
-                )
+                target_file.write(css_minify(self.data["content"]))
         except FileNotFoundError as fnf:
             if fnf.errno == errno.ENOENT:
-                os.makedirs(os.path.split(self.data['target_path'])[0], exist_ok=True)
+                os.makedirs(
+                    os.path.split(self.data['target_path'])[0], exist_ok=True)
                 self.render()
             else:
                 raise
+
+
 class Site(object):
     def __init__(self, root, data):
         self.pages = []
@@ -136,7 +138,7 @@ class Site(object):
         self._parse(data)
 
     def __repr__(self):
-        return "SiteConfig(%r, %r)" % (self.root, self.data)
+        return "Site(%r, %r)" % (self.root, self.data)
 
     def _parse(self, data):
         """Load pages to be generated"""
@@ -144,7 +146,8 @@ class Site(object):
             self.pages = [Page(self.root, **page) for page in data["pages"]]
             self.templates = [os.path.join(self.root, template)
                               for template in data["templates"]]
-            self.resources = [Resource(self.root, **resource) for resource in data["resources"]]
+            self.resources = [Resource(self.root, **resource)
+                              for resource in data["resources"]]
             print(self.resources)
         except KeyError as ke:
             if ke is 'templates':
@@ -164,7 +167,6 @@ class Site(object):
             Pages to know their titles, this comes from their YAML metadata
             """
         for page in self.pages:
-            print(page)
             if page['page_type'] == "index":
                 """
                 Pass all blog posts to the index page, do not pass other indexes
@@ -177,6 +179,7 @@ class Site(object):
 
         for resource in self.resources:
             resource.render()
+
 
 class ConfigLoader(object):
 
@@ -194,7 +197,7 @@ class ConfigLoader(object):
             if fnf.errno != errno.ENOENT:
                 raise
             else:
-                print("Error: No path to site config")
+                print("[ERROR] No path to site config")
                 return 1
 
         try:
@@ -206,25 +209,55 @@ class ConfigLoader(object):
         return configs
 
 
-def main(args):
-    if len(args) <= 1:
-        print("Error: No path to site root")
-        return 1
+def add_page(args, sites):
+    if not hasattr(args, 'site'):
+        print('Why site would you like to add a new page to?')
+        count = 0
+        for site in sites:
+            print("%i - %s" % (count, site.data['site']))
+            count += 1
 
-    site_root = args[1] if os.path.isdir(args[1]) else None
-
-    sites = ConfigLoader().load(site_root)
-    markdown_renderer = markdown.Markdown(
-        extensions=['markdown.extensions.meta'])
-    for site in sites:
-        env = Environment(
-            loader=FileSystemLoader(site.templates),
-            autoescape=select_autoescape(["html", "xml"]))
-
-        site.render(markdown_renderer, env)
-
-    return 0
+        choice = input()
+        if not int(choice) < len(sites):
+            print("[ERROR] %s is not a valid selection" % choice)
+            return 1
 
 
-if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+def main(parser, args):
+    sites = ConfigLoader().load(args.site_root)
+
+    if hasattr(args, 'page_type'):
+        return add_page(args, sites)
+    else:
+        if not os.path.isdir(args.site_root):
+            print("[ERROR] %s is not a directory" % args.site_root)
+            parser.print_help()
+            return 1
+
+        markdown_renderer = markdown.Markdown(
+            extensions=['markdown.extensions.meta'])
+        for site in sites:
+            env = Environment(
+                loader=FileSystemLoader(site.templates),
+                autoescape=select_autoescape(["html", "xml"]))
+
+            site.render(markdown_renderer, env)
+
+        return 0
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Static website generator')
+    parser.add_argument("site_root", help='website root directory')
+
+    subparsers = parser.add_subparsers(help='sub-command help')
+    newpage = subparsers.add_parser(
+        'newpage', help=('add a new page to  site.json and an emtpy file'))
+    newpage.add_argument(
+        "--page-type",
+        default="post",
+        type=str,
+        help='type of page to generate')
+
+    args = parser.parse_args()
+    sys.exit(main(parser, args))

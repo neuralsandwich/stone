@@ -1,9 +1,10 @@
 title: stone README
 template: base.html
 
-
 # stone
-Static website generator for half.systems
+Yet another static website generator.
+
+Used by half.systems
 
 # Usage
 You may define site structures within the **site.json** file. The file should
