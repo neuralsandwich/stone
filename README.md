@@ -6,8 +6,7 @@ Used by half.systems
 # Installation
 
 ```
-git clone https://github.com/NeuralSandwich/stone.git
-python setup.py install
+pip install stone-site
 ```
 
 # Usage
