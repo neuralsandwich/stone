@@ -1,19 +1,13 @@
-#!/usr/bin/env python3
-
-import argparse
+"""Stone library functions?"""
 import collections
 import errno
-import os
-import sys
-
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-from jinja2.exceptions import TemplateNotFound
 import json
-import markdown
-from css_html_js_minify import css_minify, html_minify
+import os
 
+from jinja2.exceptions import TemplateNotFound
 
-class Page(collections.UserDict):
+class Page(dict):
+    """Representation of a Page"""
     def __init__(self,
                  site_root,
                  source,
@@ -64,9 +58,8 @@ class Page(collections.UserDict):
         try:
             with open(self.data['target_path'], "w") as target_file:
                 target_file.write(
-                    html_minify(
                         environment.get_template(self['template']).render(
-                            self)))
+                            self))
         except TemplateNotFound as tnf:
             print(tnf)
         except KeyError as ke:
@@ -84,7 +77,7 @@ class Page(collections.UserDict):
                 raise
 
 
-class Resource(collections.UserDict):
+class Resource(dict):
     def __init__(self, site_root, source, target, resource_type=None):
         self.data = {
             "resource_type": resource_type,
@@ -221,43 +214,3 @@ def add_page(args, sites):
         if not int(choice) < len(sites):
             print("[ERROR] %s is not a valid selection" % choice)
             return 1
-
-
-def main(parser, args):
-    sites = ConfigLoader().load(args.site_root)
-
-    if hasattr(args, 'page_type'):
-        return add_page(args, sites)
-    else:
-        if not os.path.isdir(args.site_root):
-            print("[ERROR] %s is not a directory" % args.site_root)
-            parser.print_help()
-            return 1
-
-        markdown_renderer = markdown.Markdown(
-            extensions=['markdown.extensions.meta'])
-        for site in sites:
-            env = Environment(
-                loader=FileSystemLoader(site.templates),
-                autoescape=select_autoescape(["html", "xml"]))
-
-            site.render(markdown_renderer, env)
-
-        return 0
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Static website generator')
-    parser.add_argument("site_root", help='website root directory')
-
-    subparsers = parser.add_subparsers(help='sub-command help')
-    newpage = subparsers.add_parser(
-        'newpage', help=('add a new page to  site.json and an emtpy file'))
-    newpage.add_argument(
-        "--page-type",
-        default="post",
-        type=str,
-        help='type of page to generate')
-
-    args = parser.parse_args()
-    sys.exit(main(parser, args))

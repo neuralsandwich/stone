@@ -1,0 +1,10 @@
+Stone Changelog
+===============
+
+Here are the release notes for each version of Stone.
+
+Version 0.0.1
+-------------
+
+* Generate HTML from Markdown
+* jinja2 templating is processed in HTML files
