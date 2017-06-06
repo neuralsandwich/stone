@@ -6,6 +6,13 @@ Yet another static website generator.
 
 Used by half.systems
 
+# Installation
+
+```
+git clone https://github.com/NeuralSandwich/stone.git
+python setup.py install
+```
+
 # Usage
 You may define site structures within the **site.json** file. The file should
 contain an object that holds a list
