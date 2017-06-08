@@ -20,6 +20,15 @@ def main(args=None):
         'generate', aliases=['gen'], help=('generate site'))
     build_parser.set_defaults(func=generate_site)
 
+    # stone init <path>
+    init_parser = subparsers.add_parser(
+        'init', help=('create a template site.json'))
+    init_parser.add_argument(
+        "--type", default="blog", type=str, help='type of site to generate')
+    init_parser.add_argument(
+        "--site-name", type=str, help='name of the site: example.com')
+    init_parser.set_defaults(func=init_site)
+
     # stone newpage <path>
     newpage_parser = subparsers.add_parser(
         'newpage', help=('add a new page to  site.json and an emtpy file'))

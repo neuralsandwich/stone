@@ -240,3 +240,7 @@ def new_page(args):
         if not int(choice) < len(sites):
             print("[ERROR] %s is not a valid selection" % choice)
             return 1
+
+
+def init_site(args):
+    pass
