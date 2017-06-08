@@ -4,47 +4,43 @@ from __future__ import print_function
 import argparse
 import os
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-import markdown
-from .stone import ConfigLoader, add_page
+from .stone import generate_site, init_site, new_page
 
 
 def main(args=None):
     """Entry point function for Stone"""
-    parser = argparse.ArgumentParser(description='Static website generator')
-    parser.add_argument("site_root", help='website root directory')
+    parser = argparse.ArgumentParser(
+        prog='stone', description='Static website generator')
 
-    subparsers = parser.add_subparsers(help='sub-command help')
-    newpage = subparsers.add_parser(
+    subparsers = parser.add_subparsers(
+        title='commands', help='commands')
+
+    # stone build <path>
+    build_parser = subparsers.add_parser(
+        'generate', aliases=['gen'], help=('generate site'))
+    build_parser.set_defaults(func=generate_site)
+
+    # stone newpage <path>
+    newpage_parser = subparsers.add_parser(
         'newpage', help=('add a new page to  site.json and an emtpy file'))
-    newpage.add_argument(
+    newpage_parser.add_argument(
         "--page-type",
         default="post",
         type=str,
         help='type of page to generate')
+    newpage_parser.set_defaults(func=new_page)
+
+    # Add general arguments after subparsers so the order makes sense
+    parser.add_argument("site_root", help='website root directory')
 
     args = parser.parse_args()
-    sites = ConfigLoader().load(args.site_root)
 
-    if hasattr(args, 'page_type'):
-        return add_page(args, sites)
-    else:
-        if not os.path.isdir(args.site_root):
-            print("[ERROR] %s is not a directory" % args.site_root)
-            parser.print_help()
-            return 1
+    if not os.path.isdir(args.site_root):
+        print("[ERROR] %s is not a directory" % args.site_root)
+        parser.print_help()
+        return 1
 
-        markdown_renderer = markdown.Markdown(
-            extensions=['markdown.extensions.meta'])
-        for site in sites:
-            env = Environment(
-                loader=FileSystemLoader(site.templates),
-                autoescape=select_autoescape(["html", "xml"]))
-
-            site.render(markdown_renderer, env)
-
-        return 0
-
+    args.func(args)
 
 if __name__ == '__main__':
     main()

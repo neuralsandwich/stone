@@ -1,19 +1,55 @@
 """Stone library functions?"""
+
 import collections
 import errno
 import json
 import os
 
+from jinja2 import (Environment, FileSystemLoader, select_autoescape)
 from jinja2.exceptions import TemplateNotFound
+import markdown
 
-class Page(dict):
+
+class ConfigLoader(object):
+
+    site_config_file = "site.json"
+
+    def __init__(self):
+        pass
+
+    def load(self, path):
+        """Load site configuration"""
+        configs = []
+        try:
+            json_data = json.loads(
+                open(os.path.join(path, self.site_config_file), "r").read())
+        except FileNotFoundError as fnf:
+            if fnf.errno != errno.ENOENT:
+                raise
+            else:
+                print("[ERROR] No path to site config")
+                return 1
+
+        try:
+            for site_data in json_data["sites"]:
+                configs.append(Site(path, site_data))
+        except KeyError:
+            configs.append(Site(path, site_data))
+
+        return configs
+
+
+class Page(collections.UserDict):
     """Representation of a Page"""
+
     def __init__(self,
                  site_root,
                  source,
                  target,
                  page_type=None,
                  redirects=None):
+
+        self._site_root = site_root
         self.data = {
             "page_type": page_type,
             "redirects": redirects,
@@ -27,6 +63,7 @@ class Page(dict):
         except IndexError:
             self.data["href"] = target
         self.data['content'] = open(self.data['source_path'], "r").read()
+        self.renderer = None
 
     def __contains__(self, key):
         return str(key) in self.data
@@ -38,19 +75,21 @@ class Page(dict):
             raise KeyError(key)
 
     def __repr__(self):
-        return "Page(%r, %r)" % (self.data['source'], self.data['target'])
+        class_name = type(self).__name__
+        return ('{}({!r}, {!r}, {!r}, page_type={!r}, redirects={!r})'
+                .format(class_name, self._site_root, self.data['source'],
+                        self.data['target'], self.data['page_type'],
+                        self.data['redirects']))
 
     def __setitem__(self, key, item):
         self.data[str(key)] = item
 
     def convert_to_template_html(self, md_renderer):
+        """Convert markdown to templated HTML"""
         self.renderer = md_renderer
-        self['content'] = self.renderer.convert(self['content'])
+        self.data['content'] = self.renderer.convert(self.data['content'])
         for key, value in self.renderer.Meta.items():
-            if isinstance(value, list) and len(value) == 1:
-                self.data[key] = value[0]
-            else:
-                self.data[key] = value
+            self.data[key] = value[0]
 
     def render_html(self, environment):
         print("Rendering: %s to %s" % (self.data['source_path'],
@@ -58,14 +97,14 @@ class Page(dict):
         try:
             with open(self.data['target_path'], "w") as target_file:
                 target_file.write(
-                        environment.get_template(self['template']).render(
-                            self))
+                    environment.get_template(self.data['template']).render(
+                        self.data))
         except TemplateNotFound as tnf:
             print(tnf)
         except KeyError as ke:
             if str(ke) == '\'template\'':
                 print('Missing template, rendering markdown only')
-                environment.from_string(self['content']).render(self)
+                environment.from_string(self.data['content']).render(self)
             else:
                 raise
         except FileNotFoundError as fnf:
@@ -77,7 +116,7 @@ class Page(dict):
                 raise
 
 
-class Resource(dict):
+class Resource(collections.UserDict):
     def __init__(self, site_root, source, target, resource_type=None):
         self.data = {
             "resource_type": resource_type,
@@ -110,7 +149,7 @@ class Resource(dict):
                                        self.data['target_path']))
         try:
             with open(self.data['target_path'], "w") as target_file:
-                target_file.write(css_minify(self.data["content"]))
+                target_file.write(self.data["content"])
         except FileNotFoundError as fnf:
             if fnf.errno == errno.ENOENT:
                 os.makedirs(
@@ -120,7 +159,7 @@ class Resource(dict):
                 raise
 
 
-class Site(object):
+class Site(collections.UserDict):
     def __init__(self, root, data):
         self.pages = []
         self.index = []
@@ -160,51 +199,38 @@ class Site(object):
             Pages to know their titles, this comes from their YAML metadata
             """
         for page in self.pages:
-            if page['page_type'] == "index":
+            if page.data['page_type'] == "index":
                 """
                 Pass all blog posts to the index page, do not pass other indexes
                 or page types to the index.
                 """
-                page['posts'] = [post for post in self.pages
+                page.data['posts'] = [post for post in self.pages
                                  if post is not page]
-                page['posts'].reverse()
+                page.data['posts'].reverse()
             page.render_html(environment)
 
         for resource in self.resources:
             resource.render()
 
 
-class ConfigLoader(object):
+def generate_site(args):
+    """Generate site"""
+    sites = ConfigLoader().load(args.site_root)
 
-    site_config_file = "site.json"
-
-    def __init__(self):
-        pass
-
-    def load(self, path):
-        configs = []
-        try:
-            json_data = json.loads(
-                open(os.path.join(path, self.site_config_file), "r").read())
-        except FileNotFoundError as fnf:
-            if fnf.errno != errno.ENOENT:
-                raise
-            else:
-                print("[ERROR] No path to site config")
-                return 1
-
-        try:
-            for site_data in json_data["sites"]:
-                configs.append(Site(path, site_data))
-        except KeyError:
-            configs.append(Site(path, site_data))
-
-        return configs
+    markdown_renderer = markdown.Markdown(
+        extensions=['markdown.extensions.meta'])
+    for site in sites:
+        env = Environment(
+            loader=FileSystemLoader(site.templates),
+            autoescape=select_autoescape(["html", "xml"]))
+        site.render(markdown_renderer, env)
 
 
-def add_page(args, sites):
+def new_page(args):
+    """Add new page to the site"""
+    sites = ConfigLoader().load(args.site_root)
     if not hasattr(args, 'site'):
-        print('Why site would you like to add a new page to?')
+        print('What site would you like to add a new page to?')
         count = 0
         for site in sites:
             print("%i - %s" % (count, site.data['site']))
