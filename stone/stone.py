@@ -104,7 +104,10 @@ class Page(collections.UserDict):
         except KeyError as ke:
             if str(ke) == '\'template\'':
                 print('Missing template, rendering markdown only')
-                environment.from_string(self.data['content']).render(self)
+                with open(self.data['target_path'], "w") as target_file:
+                    target_file.write(
+                        environment.from_string(self.data['content']).render(
+                            self))
             else:
                 raise
         except FileNotFoundError as fnf:
@@ -205,7 +208,7 @@ class Site(collections.UserDict):
                 or page types to the index.
                 """
                 page.data['posts'] = [post for post in self.pages
-                                 if post is not page]
+                                      if post is not page]
                 page.data['posts'].reverse()
             page.render_html(environment)
 
@@ -243,4 +246,24 @@ def new_page(args):
 
 
 def init_site(args):
-    pass
+    template_sites = '{{"sites":[{!s}]}}'
+    template_site = '{{"site":"{!s}","pages":[{!s}],"type":"{!s}","templates":"[{!s}]"}}'
+    template_page = '{{"page_type":"{!s}","source":"{!s}","target":"{!s}","redirects":"{!s}"}}'
+    init_content = '# Hello, World!'
+    init_index = template_page.format('page', 'source/index.md',
+                                      'target/index.html', '')
+    init_site = template_site.format(args.site_name, init_index, 'page', '')
+    init_sites = template_sites.format(init_site)
+
+    f = open('{}/site.json'.format(args.site_root), 'w')
+    f.write(init_sites)
+    f.close()
+
+    try:
+        os.mkdir(os.path.join('{}/source'.format(args.site_root)))
+    except FileExistsError as fef:
+        pass
+
+    f = open('{}/source/index.md'.format(args.site_root), 'w')
+    f.write(init_content)
+    f.close()
