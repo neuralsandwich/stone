@@ -12,8 +12,10 @@ def main(args=None):
     parser = argparse.ArgumentParser(
         prog='stone', description='Static website generator')
 
-    subparsers = parser.add_subparsers(
-        title='commands', help='commands')
+    # Add general arguments after subparsers so the order makes sense
+    parser.add_argument("site_root", help='website root directory')
+
+    subparsers = parser.add_subparsers(title='commands', help='commands')
 
     # stone build <path>
     build_parser = subparsers.add_parser(
@@ -26,7 +28,10 @@ def main(args=None):
     init_parser.add_argument(
         "--type", default="blog", type=str, help='type of site to generate')
     init_parser.add_argument(
-        "--site-name", type=str, help='name of the site: example.com')
+        "--site-name",
+        type=str,
+        help='name of the site: example.com',
+        required=True)
     init_parser.set_defaults(func=init_site)
 
     # stone newpage <path>
@@ -39,9 +44,6 @@ def main(args=None):
         help='type of page to generate')
     newpage_parser.set_defaults(func=new_page)
 
-    # Add general arguments after subparsers so the order makes sense
-    parser.add_argument("site_root", help='website root directory')
-
     args = parser.parse_args()
 
     if not os.path.isdir(args.site_root):
@@ -50,6 +52,7 @@ def main(args=None):
         return 1
 
     args.func(args)
+
 
 if __name__ == '__main__':
     main()
