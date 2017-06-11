@@ -156,6 +156,9 @@ class Resource(collections.UserDict):
         self.data[str(key)] = item
 
     def render(self):
+        #Added a bit here tthat would allow the addition of different resource types, currently the only supported type is
+        #a simple relocation of files (for copying images and javascript to specified locations.  This could be expanded to
+        #ass SASS or LESS or Coffeescript compilation stages etc.
         if not self.get("resource_type") == "relocate":
             try:
                 with open(self.data['target_path'], "w") as target_file:
