@@ -4,6 +4,7 @@ import collections
 import errno
 import json
 import os
+import shutil
 
 from jinja2 import (Environment, FileSystemLoader, select_autoescape)
 from jinja2.exceptions import TemplateNotFound
@@ -88,8 +89,13 @@ class Page(collections.UserDict):
         """Convert markdown to templated HTML"""
         self.renderer = md_renderer
         self.data['content'] = self.renderer.convert(self.data['content'])
+        #Chnage this so that if the value is a list and has only one element, pass that it individually,
+        #otherwise pass the value in as is....
         for key, value in self.renderer.Meta.items():
-            self.data[key] = value[0]
+            if isinstance(value, list) and len(value) == 1:
+                self.data[key] = value[0]
+            else:
+                self.data[key] = value
 
     def render_html(self, environment):
         print("Rendering: %s to %s" % (self.data['source_path'],
@@ -129,8 +135,10 @@ class Resource(collections.UserDict):
             "target_path": os.path.abspath(os.path.join(site_root, target)),
             "href": target.split('/')[1]
         }
-        with open(self.data["source_path"], "r") as source_file:
-            self.data["content"] = source_file.read()
+        print("CURRENT FILE", self.data["source_path"])
+        if not resource_type == "relocate":
+            with open(self.data["source_path"], "r") as source_file:
+                self.data["content"] = source_file.read()
 
     def __contains__(self, key):
         return str(key) in self.data
@@ -148,18 +156,26 @@ class Resource(collections.UserDict):
         self.data[str(key)] = item
 
     def render(self):
-        print("Rendering: %s to %s" % (self.data['source_path'],
-                                       self.data['target_path']))
-        try:
-            with open(self.data['target_path'], "w") as target_file:
-                target_file.write(self.data["content"])
-        except FileNotFoundError as fnf:
-            if fnf.errno == errno.ENOENT:
-                os.makedirs(
-                    os.path.split(self.data['target_path'])[0], exist_ok=True)
-                self.render()
-            else:
-                raise
+        if not self.get("resource_type") == "relocate":
+            try:
+                with open(self.data['target_path'], "w") as target_file:
+                    target_file.write(
+                        self.data["content"]
+                    )
+            except FileNotFoundError as fnf:
+                if fnf.errno == errno.ENOENT:
+                    os.makedirs(os.path.split(self.data['target_path'])[0], exist_ok=True)
+                    self.render()
+                else:
+                    raise
+        else:
+            if os.path.isdir(self.data["source_path"]):
+                shutil.rmtree(self.data["target_path"], ignore_errors=True)
+                shutil.copytree(self.data["source_path"], self.data["target_path"])
+            elif os.path.isfile(self.data["source_path"]):
+                if os.path.exists(self.data["target_path"]):
+                    os.remove(self.data["target_path"])
+                shutil.copy2(self.data["source_path"], self.data["target_path"])
 
 
 class Site(collections.UserDict):
@@ -197,6 +213,7 @@ class Site(collections.UserDict):
     def render(self, renderer, environment):
         """Render Markdown to HTML and extract YAML metadata"""
         for page in self.pages:
+            print("RENDERING", page)
             page.convert_to_template_html(renderer)
             """
             Pages to know their titles, this comes from their YAML metadata
