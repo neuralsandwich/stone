@@ -22,7 +22,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(name='stone-site',
 
       # Versions should comply with PEP440.  For a discussion on single-sourcing
-      version='0.1a1.dev1',
+      version='0.1a1.dev3',
 
 
       description='Static site generator',
