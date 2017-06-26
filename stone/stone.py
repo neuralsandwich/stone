@@ -221,7 +221,8 @@ def generate_site(args):
     sites = ConfigLoader().load(args.site_root)
 
     markdown_renderer = markdown.Markdown(
-        extensions=['markdown.extensions.meta'])
+        extensions=['markdown.extensions.meta', 'markdown.extensions.tables',
+            'markdown.extensions.footnotes'])
     for site in sites:
         env = Environment(
             loader=FileSystemLoader(site.templates),
