@@ -4,30 +4,54 @@ Stone's representation of a page
 """
 from collections import UserDict
 import errno
+from json import JSONEncoder
 import os
+import sys
+from typing import Any, Dict
 
 from jinja2.exceptions import TemplateNotFound
 
 
-class Page(UserDict):
+class PageEncoder(JSONEncoder):
+    """JSON encoder for Page"""
+
+    def default(self, o):
+        if isinstance(o, Page):
+            return o.to_entry()
+
+        # When not a page, call the JSONEncoder. It will call the correct fail.
+        return JSONEncoder.default(self, o)
+
+
+class Page(UserDict):  # pylint: disable=too-many-ancestors
     """Representation of a Page"""
 
-    def __init__(self,
-                 site_root,
-                 source,
-                 target,
-                 page_type=None,
-                 redirects=None):
+    _site = None
+    data: Dict[str, str] = {}
 
-        self._site_root = site_root
-        self.data = {
-            "page_type": page_type,
-            "redirects": redirects,
-            "source": source,
-            "source_path": os.path.abspath(os.path.join(site_root, source)),
-            "target": target,
-            "target_path": os.path.abspath(os.path.join(site_root, target))
-        }
+    def __init__(self, site, source: str, target: str,
+                 data: Dict=None) -> None:
+        super().__init__()
+        self.data = {}
+        self._site = site
+
+        def get(key, dic):
+            """Get a dictionary key if it exists"""
+            return dic[key] if key in dic else None
+
+        try:
+            for k in data.keys():
+                self.data[k] = get(k, data)
+        except AttributeError:
+            pass
+
+        self.data["source"] = source
+        self.data["target"] = target
+        self.data["source_path"] = os.path.abspath(
+            os.path.join(self._site.root, site['source'], source))
+        self.data["target"] = target
+        self.data["target_path"] = os.path.abspath(
+            os.path.join(self._site.root, site['target'], target))
         try:
             self.data["href"] = target.split('/')[1]
         except IndexError:
@@ -36,48 +60,66 @@ class Page(UserDict):
         self.renderer = None
 
     def __contains__(self, key):
-        return str(key) in self.data
+        return key in self.data
 
-    def __missing__(self, key):
-        if str(key) in self.data:
-            return self.data
-        else:
-            raise KeyError(key)
+    def __delitem__(self, key):
+        del self.data[key]
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __iter__(self):
+        self.data.__iter__()
+
+    def __len__(self):
+        return len(self.data)
 
     def __repr__(self):
         class_name = type(self).__name__
-        return ('{}({!r}, {!r}, {!r}, page_type={!r}, redirects={!r})'
-                .format(class_name, self._site_root, self.data['source'],
-                        self.data['target'], self.data['page_type'],
-                        self.data['redirects']))
+        return "{}({}, {})".format(class_name, self['source'], self['target'])
+
+    def __str__(self):
+        return str(self.to_entry())
 
     def __setitem__(self, key, item):
-        self.data[str(key)] = item
+        self.data[key] = item
+
+    def clear(self):
+        self.data = {}
 
     def convert_to_template_html(self, md_renderer):
         """Convert markdown to templated HTML"""
         self.renderer = md_renderer
-        self.data['content'] = self.renderer.convert(self.data['content'])
+        self['content'] = self.renderer.convert(self['content'])
         for key, value in self.renderer.Meta.items():
-            self.data[key] = value[0]
+            self[key] = value[0]
+
+    def get(self, key, default=None):
+        try:
+            return self.data[key]
+        except KeyError:
+            return default
 
     def render_html(self, environment):
-        print("Rendering: %s to %s" % (self.data['source_path'],
-                                       self.data['target_path']))
+        """Render the page to html"""
+        print("Rendering: %s to %s" % (self['source_path'],
+                                       self['target_path']))
         try:
-            with open(self.data['target_path'], "w") as target_file:
+            with open(self['target_path'], "w") as target_file:
                 target_file.write(
-                    environment.get_template(self.data['template']).render(
+                    environment.get_template(self['template']).render(
                         self.data))
         except TemplateNotFound as tnf:
             print(tnf)
-        except KeyError as ke:
-            if str(ke) == '\'template\'':
-                print('Missing template, rendering markdown only')
-                with open(self.data['target_path'], "w") as target_file:
+        except KeyError as key_error:
+            if str(key_error) == '\'template\'':
+                print(
+                    'Missing template, rendering markdown only',
+                    file=sys.stderr)
+                with open(self['target_path'], "w") as target_file:
                     target_file.write(
-                        environment.from_string(self.data['content']).render(
-                            self))
+                        environment.from_string(self['content']).render(
+                            self.data))
             else:
                 raise
         except FileNotFoundError as fnf:
@@ -87,3 +129,17 @@ class Page(UserDict):
                 self.render_html(environment)
             else:
                 raise
+
+    def to_entry(self) -> Dict[str, Any]:
+        """"Convert Page into serialised json for site.json"""
+
+        def get(key):
+            """return a dictionary item or None"""
+            return self[key] if key in self else None
+
+        items = ['source', 'target', 'page_type']
+        entry = {}
+        for item in items:
+            if get(item) is not None:
+                entry[item] = self[item]
+        return entry
