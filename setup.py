@@ -1,7 +1,6 @@
 """Setup script for Stone
 
-See:
-https://github.com/NeuralSandwich/stone
+See: https://github.com/NeuralSandwich/stone
 """
 
 # To use a consistent encoding
@@ -21,8 +20,8 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(name='stone-site',
 
-      # Versions should comply with PEP440.  For a discussion on single-sourcing
-      version='0.1a1.dev4',
+      # Versions should comply with PEP440. For a discussion on single-sourcing
+      version='0.1a2',
 
 
       description='Static site generator',
@@ -59,7 +58,8 @@ setup(name='stone-site',
 
       # List run-time dependencies here.
       # https://packaging.python.org/en/latest/requirements.html
-      install_requires=['jinja2', 'Markdown'],
+      install_requires=['css_html_js_minify', 'jinja2', 'Markdown',
+                        'unidecode'],
       extras_require={
           'dev': ['check-manifest'],
           'test': ['coverage'],
