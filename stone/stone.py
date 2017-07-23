@@ -5,12 +5,12 @@ import os
 from jinja2 import (Environment, FileSystemLoader, select_autoescape)
 import markdown
 
-from stone.configloader import ConfigLoader
+from stone.config import Config
 
 
 def generate_site(args):
     """Generate site"""
-    sites = ConfigLoader().load(args.site_root)
+    sites = Config().read(args.site_root)
 
     markdown_renderer = markdown.Markdown(
         extensions=['markdown.extensions.meta', 'markdown.extensions.tables',
@@ -24,7 +24,7 @@ def generate_site(args):
 
 def new_page(args):
     """Add new page to the site"""
-    sites = ConfigLoader().load(args.site_root)
+    sites = Config().read(args.site_root)
     if not hasattr(args, 'site'):
         print('What site would you like to add a new page to?')
         count = 0

@@ -1,6 +1,6 @@
-"""ConfigLoader
+"""Config
 
-Loader for Stone's site.json
+Stone's representation for site.json
 """
 import errno
 import json
@@ -9,14 +9,14 @@ import os
 from stone.site import Site
 
 
-class ConfigLoader(object):
+class Config(object):
 
     site_config_file = "site.json"
 
     def __init__(self):
         pass
 
-    def load(self, path):
+    def read(self, path):
         """Load site configuration"""
         configs = []
         try:
