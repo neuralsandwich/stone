@@ -1,10 +1,16 @@
-Stone Changelog
-===============
+# Stone Changelog
 
 Here are the release notes for each version of Stone.
 
-Version 0.0.1
--------------
+## Version 0.1 - WIP
+
+* Add init and newpage commands
+* Add versioned site.json
+* Add support for footnotes
+
+## Version 0.0.1
 
 * Generate HTML from Markdown
 * jinja2 templating is processed in HTML files
+* Installable through setup.py
+* Can generate basic template

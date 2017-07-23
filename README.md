@@ -1,8 +1,8 @@
-# stone
+# Stone
 
 Yet another static website generator.
 
-Used by half.systems
+Used by (www|blog).half.systems
 
 
 # Installation
@@ -19,51 +19,57 @@ To get started with `stone`:
     stone example_site init --site-name 'example.com'
     # Generate site
     stone example_site generate
+    # Add a new page
+    stone example_site newpage --name "About Us"
 
 
 ## Folder Structure
 
-Site projects can be structured as you wish.
+Stone is designed to generate the subdomains of half.systems. The following is
+the layout of the sites:
 
-The layout which stone was developed along side is:
 
-* root
-  * blog
-  * main
-  * templates
-    * templated HTML for blog and main
-  * site.json
+    .
+    ├── blog
+    │   └── ...
+    ├── main
+    │   └── ...
+    ├── site.json
+    └── templates
+        └── ...
 
-As `site.json` is explicit about the location of templates and files, the
-structure is flexible. You could locate separate template folder inside each
-site or have one giant mess in your project root.
+
+[`site.json` is very flexiable](docs/site-json.md) about the location of
+templates and files. As such your not constrained to any particular layout for
+your site. You could have separate template folders inside each site or have
+one giant mess in your project root.
 
 
 ## Pages
 
-The source markdown files should consist of simple markdown with a YAML header
+Pages are Markdown files with some optional YAML metadata
 that describe the attributes of the generated page including the page title and
 the template it uses. For example:
 
 
 ```
+---
 template: base.html
-title: TEST
+title: Hello, World
 
 # This is a header
 
-Here is so lovely content.
+Here is some lovely content.
 ```
 
-There are additional attributes:
-
-* date - Adds the date the page was create to the page metadata. This is
-  currently used when generating indexes for blogs. Format YYYY-MM-DD
+Stone makes all metadata available to page templates. Any data templates may use
+can be embedded into a page. For exampled the data, an authors name and email,
+etc.
 
 
 ## Templates
 
-Templates support **jinja2**, an example:
+Templates are HTML pages with **[jinja2](http://jinja.pocoo.org)** markup.
 
 `base.html`:
 
@@ -87,8 +93,8 @@ Templates support **jinja2**, an example:
 
 ## Generating
 
-To generate a particular site invoke `stone` with the location of the
-project's root folder.
+To generate a particular site invoke `stone` with the location of the project's
+root folder.
 
 ```
 stone root_folder generate

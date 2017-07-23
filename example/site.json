@@ -1,14 +1,22 @@
 {
-  "sites": [
-    {
-      "site": "example.com",
-      "pages": [
+    "version": 1,
+    "sites": [
         {
-          "source": "README.md",
-          "target": "README.html"
+            "site": "example.com",
+            "source": "source",
+            "target": "target",
+            "pages": [
+                {
+                    "source": "index.md",
+                    "target": "index.html",
+                    "page_type": "index"
+                },
+                {
+                    "source": "example.md",
+                    "target": "example.html",
+                    "page_type": "post"
+                }
+            ]
         }
-      ],
-      "templates": ["templates"]
-    }
-  ]
+    ]
 }
