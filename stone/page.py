@@ -102,15 +102,11 @@ class Page(UserDict):  # pylint: disable=too-many-ancestors
 
     def render_html(self, environment):
         """Render the page to html"""
-        print("Rendering: %s to %s" % (self['source_path'],
-                                       self['target_path']))
         try:
             with open(self['target_path'], "w") as target_file:
                 target_file.write(
                     environment.get_template(self['template']).render(
                         self.data))
-        except TemplateNotFound as tnf:
-            print(tnf)
         except KeyError as key_error:
             if str(key_error) == '\'template\'':
                 print(

@@ -33,7 +33,7 @@ def new_page(args):
         print('What site would you like to add a new page to?')
         count = 0
         for site in sites:
-            print("%i - %s" % (count, site.data['site']))
+            print("%i - %s" % (count, site['site']))
             count += 1
 
         choice = input()
@@ -42,15 +42,17 @@ def new_page(args):
 
     site = sites[int(choice)]
     if site:
-        page = create_page(site, args.source, args.target)
-        page['page_type'] = args.page_type
-        site.add_page(page)
+        create_add_page(site, args.source, args.target,
+                        data={'page_type': args.page_type})
         Config().write(args.site_root, sites)
 
 
-def create_page(site: Site, source: str, target: str) -> Page:
+def create_add_page(site: Site, source: str, target: str, data=None,
+                    content=None):
     """Create a Page() and file on disk"""
     init_content = '# Hello, World!'
+    if content is None and not isinstance(str, content):
+        content = init_content
 
     try:
         os.mkdir(os.path.join('{}/{}'.format(site.root, site['source'])))
@@ -59,7 +61,7 @@ def create_page(site: Site, source: str, target: str) -> Page:
 
     file_path = '{}/{}/{}'.format(site.root, site['source'], source)
     file = open(file_path, 'w')
-    file.write(init_content)
+    file.write(content)
     file.close()
 
     if target is None:
@@ -69,32 +71,28 @@ def create_page(site: Site, source: str, target: str) -> Page:
         target = target.lower().replace(r' ', '-')
         target = '{}.html'.format(target.split('.')[0])
 
-    page = Page(site, source, target)
-    return page
+    site.add_page(Page(site, source, target, data))
 
 
 def init_site(args):
     """Creata a new site from template"""
-    template_sites = '{{"sites":[{!s}]}}'
-    template_site = ('{{"site":"{!s}",'
-                     '"pages":[{!s}],"type":"{!s}","templates":"[{!s}]"}}')
-    template_page = ('{{"page_type":"{!s}","source":"{!s}","target":"{!s}",'
-                     '"redirects":"{!s}"}}')
-    init_content = '# Hello, World!'
-    init_index = template_page.format('page', 'source/index.md',
-                                      'target/index.html', '')
-    site = template_site.format(args.site_name, init_index, 'page', '')
-    sites = template_sites.format(site)
+    index_content = '''
+{% for post in posts %}
+    <ul>
+        <li><a href="{{ post.href }}">{{ post.title }}</a></li>
+    </ul>
+{% endfor %}
+'''
+    init_content = 'title: Hello, World!\n\n# Hello, World!'
 
-    file = open('{}/site.json'.format(args.site_root), 'w')
-    file.write(sites)
-    file.close()
+    site = Site(args.site_root, {'site': args.site_name, 'source': 'source',
+                                 'target': 'target'})
+    if args.type == 'blog':
+        create_add_page(site, 'index.md', 'index.html',
+                        content=index_content, data={'page_type': 'index'})
+        create_add_page(site, 'example.md', 'example.html',
+                        content=init_content, data={'page_type': 'post'})
+    else:
+        create_add_page(site, 'index.md', 'index.html', content=init_content)
 
-    try:
-        os.mkdir(os.path.join('{}/source'.format(args.site_root)))
-    except FileExistsError:
-        pass
-
-    file = open('{}/source/index.md'.format(args.site_root), 'w')
-    file.write(init_content)
-    file.close()
+    Config().write(args.site_root, [site])

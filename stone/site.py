@@ -113,10 +113,8 @@ class Site(UserDict):  # pylint: disable=too-many-ancestors
     def render(self, renderer, environment):
         """Render Markdown to HTML and extract YAML metadata"""
         for page in self.pages:
+            # Pages require initial parsing to read their YAML metadata
             page.convert_to_template_html(renderer)
-            """
-            Pages to know their titles, this comes from their YAML metadata
-            """
         for page in self.pages:
             if page['page_type'] == "index":
                 """
@@ -127,6 +125,8 @@ class Site(UserDict):  # pylint: disable=too-many-ancestors
                     post for post in self.pages if post is not page
                 ]
                 page['posts'].reverse()
+            print("Rendering: {} to {}".format(page['source_path'],
+                                               page['target_path']))
             page.render_html(environment)
 
         for resource in self.resources:
