@@ -51,7 +51,7 @@ def create_add_page(site: Site, source: str, target: str, data=None,
                     content=None):
     """Create a Page() and file on disk"""
     init_content = '# Hello, World!'
-    if content is None and not isinstance(str, content):
+    if content is None and not isinstance(content, str):
         content = init_content
 
     try:
