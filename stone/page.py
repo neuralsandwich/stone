@@ -107,15 +107,20 @@ class Page(UserDict):  # pylint: disable=too-many-ancestors
                 target_file.write(
                     environment.get_template(self['template']).render(
                         self.data))
+        except TemplateNotFound:
+            print('Missing template, rendering markdown only',
+                  file=sys.stderr)
+            with open(self['target_path'], "w") as target_file:
+                target_file.write(
+                    environment.from_string(self['content']).render(self.data))
         except KeyError as key_error:
             if str(key_error) == '\'template\'':
-                print(
-                    'Missing template, rendering markdown only',
-                    file=sys.stderr)
+                print('Missing template, rendering markdown only',
+                      file=sys.stderr)
                 with open(self['target_path'], "w") as target_file:
                     target_file.write(
-                        environment.from_string(self['content']).render(
-                            self.data))
+                        environment.from_string(
+                            self['content']).render(self.data))
             else:
                 raise
         except FileNotFoundError as fnf:
