@@ -8,6 +8,7 @@ from collections import UserDict
 from json import JSONEncoder
 import os
 from typing import Dict, List
+from markdown import Markdown
 
 from stone.page import Page, PageEncoder
 from stone.resource import Resource
@@ -110,10 +111,15 @@ class Site(UserDict):  # pylint: disable=too-many-ancestors
         except KeyError:
             return False
 
-    def render(self, renderer, environment):
+    def render(self, environment):
         """Render Markdown to HTML and extract YAML metadata"""
+        renderer = None
         for page in self.pages:
             # Pages require initial parsing to read their YAML metadata
+            renderer = Markdown(extensions=[
+                'markdown.extensions.meta', 'markdown.extensions.tables',
+                'markdown.extensions.footnotes'
+            ])
             page.convert_to_template_html(renderer)
         for page in self.pages:
             if 'page_type' in page and page['page_type'] == "index":
