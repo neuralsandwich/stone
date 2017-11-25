@@ -116,7 +116,7 @@ class Site(UserDict):  # pylint: disable=too-many-ancestors
             # Pages require initial parsing to read their YAML metadata
             page.convert_to_template_html(renderer)
         for page in self.pages:
-            if page['page_type'] == "index":
+            if 'page_type' in page and page['page_type'] == "index":
                 """
                 Pass all blog posts to the index page, do not pass other
                 indexes or page types to the index.
