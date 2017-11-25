@@ -4,7 +4,6 @@
 import os
 
 from jinja2 import select_autoescape, Environment, FileSystemLoader
-from markdown import Markdown
 
 from stone.config import Config
 from stone.page import Page
@@ -15,15 +14,11 @@ def generate_site(args):
     """Generate site"""
     sites = Config().read(args.site_root)
 
-    markdown_renderer = Markdown(extensions=[
-        'markdown.extensions.meta', 'markdown.extensions.tables',
-        'markdown.extensions.footnotes'
-    ])
     for site in sites:
         env = Environment(
             loader=FileSystemLoader(site.templates),
             autoescape=select_autoescape(["html", "xml"]))
-        site.render(markdown_renderer, env)
+        site.render(env)
 
 
 def new_page(args):
