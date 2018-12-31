@@ -2,24 +2,35 @@
 # -*- coding: utf-8 -*-
 
 import os
-
-from jinja2 import select_autoescape, Environment, FileSystemLoader
+from pathlib import Path
 
 from stone.config import Config
 from stone.page import Page
 from stone.site import Site
-
+from stone.backends import load_backends
+from stone.renderers import load_renderers
 
 def generate_site(args):
     """Generate site"""
     sites = Config().read(args.site_root)
 
     for site in sites:
-        env = Environment(
-            loader=FileSystemLoader(site.templates),
-            autoescape=select_autoescape(["html", "xml"]))
-        site.render(env)
+        """
+        * Initialise default renders, generators and backends
+        * Select the correct generator for the site type
+        * Select and assemble the renderer chain
+        * Select the correct backends
+        """
+        renderer = load_renderers(renderers=site.get('renderers', []),
+                                  templates=site.get('templates', []))
+        backends = load_backends(backends=site.get('backends', []),
+                                 root=args.site_root)
 
+        pages = [renderer.render(page) for page in site.pages]
+
+        for backend in backends:
+            for page in pages:
+                backend.commit(page)
 
 def new_page(args):
     """Add new page to the site"""

@@ -29,8 +29,7 @@ class Resource(UserDict):
     def __missing__(self, key):
         if str(key) in self.data:
             return self.data
-        else:
-            raise KeyError(key)
+        raise KeyError(key)
 
     def __repr__(self):
         return "Resource(%r, %r)" % (self.data['source'], self.data['target'])
@@ -39,6 +38,7 @@ class Resource(UserDict):
         self.data[str(key)] = item
 
     def render(self):
+        """Render resource to file"""
         print("Rendering: %s to %s" % (self.data['source_path'],
                                        self.data['target_path']))
         try:

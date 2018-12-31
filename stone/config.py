@@ -10,7 +10,7 @@ import sys
 from stone.site import Site, SiteEncoder
 
 
-class Config(object):
+class Config:
     """Loader site.json"""
 
     site_config_file = "site.json"
