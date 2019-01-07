@@ -1,0 +1,12 @@
+</html>
+<head>
+    <title>{{ title }}</title>
+</head>
+<body>
+{% for post in posts %}
+<ul>
+  <li><a href="{{ post.href }}">{{ post.title }} - {{ post.date }}</a></li>
+</ul>
+{% endfor %}
+</body>
+</html>

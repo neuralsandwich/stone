@@ -3,13 +3,9 @@
 Stone's representation of a page
 """
 from collections import UserDict
-import errno
 from json import JSONEncoder
 import os
-import sys
 from typing import Any, Dict
-
-from jinja2.exceptions import TemplateNotFound
 
 
 class PageEncoder(JSONEncoder):
@@ -30,7 +26,7 @@ class Page(UserDict):  # pylint: disable=too-many-ancestors
     data: Dict[str, str] = {}
 
     def __init__(self, site, source: str, target: str,
-                 data: Dict=None) -> None:
+                 data: Dict = None) -> None:
         super().__init__()
         self.data = {}
         self._site = site
@@ -57,7 +53,6 @@ class Page(UserDict):  # pylint: disable=too-many-ancestors
         except IndexError:
             self.data["href"] = target
         self.data['content'] = open(self.data['source_path'], "r").read()
-        self.renderer = None
 
     def __contains__(self, key):
         return key in self.data
@@ -87,49 +82,11 @@ class Page(UserDict):  # pylint: disable=too-many-ancestors
     def clear(self):
         self.data = {}
 
-    def convert_to_template_html(self, md_renderer):
-        """Convert markdown to templated HTML"""
-        self.renderer = md_renderer
-        self['content'] = self.renderer.convert(self['content'])
-        for key, value in self.renderer.Meta.items():
-            self[key] = value[0]
-
     def get(self, key, default=None):
         try:
             return self.data[key]
         except KeyError:
             return default
-
-    def render_html(self, environment):
-        """Render the page to html"""
-        try:
-            with open(self['target_path'], "w") as target_file:
-                target_file.write(
-                    environment.get_template(self['template']).render(
-                        self.data))
-        except TemplateNotFound:
-            print('Missing template, rendering markdown only',
-                  file=sys.stderr)
-            with open(self['target_path'], "w") as target_file:
-                target_file.write(
-                    environment.from_string(self['content']).render(self.data))
-        except KeyError as key_error:
-            if str(key_error) == '\'template\'':
-                print('Missing template, rendering markdown only',
-                      file=sys.stderr)
-                with open(self['target_path'], "w") as target_file:
-                    target_file.write(
-                        environment.from_string(
-                            self['content']).render(self.data))
-            else:
-                raise
-        except FileNotFoundError as fnf:
-            if fnf.errno == errno.ENOENT:
-                os.makedirs(
-                    os.path.split(self.data['target_path'])[0], exist_ok=True)
-                self.render_html(environment)
-            else:
-                raise
 
     def to_entry(self) -> Dict[str, Any]:
         """"Convert Page into serialised json for site.json"""

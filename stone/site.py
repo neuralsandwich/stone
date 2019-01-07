@@ -8,7 +8,6 @@ from collections import UserDict
 from json import JSONEncoder
 import os
 from typing import Dict, List
-from markdown import Markdown
 
 from stone.page import Page, PageEncoder
 from stone.resource import Resource
@@ -79,61 +78,21 @@ class Site(UserDict):  # pylint: disable=too-many-ancestors
 
     def _parse(self, data):
         """Load pages to be generated"""
-        try:
-            for page_data in data['pages']:
-                self.pages.append(
-                    Page(
-                        self,
-                        page_data.pop('source'),
-                        page_data.pop('target'),
-                        data=page_data))
+        for page_data in data['pages']:
+            self.pages.append(
+                Page(
+                    self,
+                    page_data.pop('source'),
+                    page_data.pop('target'),
+                    data=page_data))
 
-            self.templates = [
-                os.path.join(self.root, template)
-                for template in data["templates"]
-            ]
-            self.resources = [
-                Resource(self.root, **resource)
-                for resource in data["resources"]
-            ]
-        except KeyError as key_error:
-            if key_error == 'templates':
-                print("No temaplates found for %s" % (data["site"]))
-
-    def add_page(self, page):
-        """Add supplied page to site"""
-        self.pages.append(page)
-
-    def is_blog(self):
-        """Returns if the site is a blog or not"""
-        try:
-            return self.data['type'] == 'blog'
-        except KeyError:
-            return False
-
-    def render(self, environment):
-        """Render Markdown to HTML and extract YAML metadata"""
-        renderer = None
-        for page in self.pages:
-            # Pages require initial parsing to read their YAML metadata
-            renderer = Markdown(extensions=[
-                'markdown.extensions.meta', 'markdown.extensions.tables',
-                'markdown.extensions.footnotes'
-            ])
-            page.convert_to_template_html(renderer)
-        for page in self.pages:
-            if 'page_type' in page and page['page_type'] == "index":
-                """
-                Pass all blog posts to the index page, do not pass other
-                indexes or page types to the index.
-                """
-                page['posts'] = [
-                    post for post in self.pages if post is not page
-                ]
-                page['posts'].reverse()
-            print("Rendering: {} to {}".format(page['source_path'],
-                                               page['target_path']))
-            page.render_html(environment)
-
-        for resource in self.resources:
-            resource.render()
+        self.templates = [
+            os.path.join(self.root, template)
+            for template in data.get('templates', [])
+        ]
+        self.data['templates'] = self.templates
+        self.resources = [
+            Resource(self.root, **resource)
+            for resource in data.get('resources', [])
+        ]
+        self.data['resources'] = self.resources

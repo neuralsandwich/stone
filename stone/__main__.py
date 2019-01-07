@@ -1,8 +1,7 @@
-"""Entry point for Stone"""
-
 from __future__ import print_function
 import argparse
 import os
+import sys
 
 from stone.stone import generate_site, init_site, new_page
 
@@ -47,7 +46,6 @@ def add_generate(parser):
         'generate', aliases=['gen', 'build'], help=('generate site'))
     subparser.set_defaults(func=generate_site)
 
-
 def main(args=None):
     """Entry point function for Stone"""
     parser = argparse.ArgumentParser(
@@ -66,12 +64,13 @@ def main(args=None):
 
     # stone newpage <path>
     add_newpage(subparsers)
+
     args = parser.parse_args()
 
     if not os.path.isdir(args.site_root):
         print("[ERROR] %s is not a directory" % args.site_root)
         parser.print_help()
-        return 1
+        sys.exit(1)
 
     args.func(args)
 

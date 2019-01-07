@@ -6,23 +6,34 @@ See: https://github.com/NeuralSandwich/stone
 # To use a consistent encoding
 # pylint: disable=redefined-builtin
 from codecs import open
-from os import path
+import os
+import re
 
 # Apparently you should always prefer setuptools over distutils
 from setuptools import setup, find_packages
 
 # pylint: disable=invalid-name
-here = path.abspath(path.dirname(__file__))
+ROOT = os.path.abspath(os.path.dirname(__file__))
+VERSION_RE = re.compile(r'''__version__ = ['"]([0-9.]+)['"]''')
+
+requires = [
+    'jinja2',
+    'unidecode'
+]
+
+
+def get_version():
+    """Extract version from stone module"""
+    init = open(os.path.join(ROOT, 'stone', '__init__.py')).read()
+    return VERSION_RE.search(init).group(1)
+
 
 # Get the long description from the README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(os.path.join(ROOT, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='stone-site',
-
-      # Versions should comply with PEP440. For a discussion on single-sourcing
-      version='0.1a5',
-
+      version=get_version(),
 
       description='Static site generator',
       long_description=long_description,
@@ -58,8 +69,7 @@ setup(name='stone-site',
 
       # List run-time dependencies here.
       # https://packaging.python.org/en/latest/requirements.html
-      install_requires=['css_html_js_minify', 'jinja2', 'Markdown',
-                        'unidecode'],
+      install_requires=requires,
       extras_require={
           'dev': ['check-manifest'],
           'test': ['coverage'],
