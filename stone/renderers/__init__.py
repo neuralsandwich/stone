@@ -11,6 +11,7 @@ _BUILTIN_RENDERERS = (
     'markdown',
 )
 
+
 def import_renderer(module_name):
     if module_name in _BUILTIN_RENDERERS:
         return 'stone.renderers.' + module_name
@@ -28,9 +29,7 @@ def load_renderers(renderers=[], templates=[]):
     previous_renderer = None
     for r in renderers[::-1]:
         module_name = import_renderer(r)
-        renderer = sys.modules[module_name].Renderer(templates=templates,
-                                                     _next=previous_renderer)
+        renderer = sys.modules[module_name].Renderer(
+            templates=templates, _next=previous_renderer)
         previous_renderer = renderer
     return previous_renderer
-
-

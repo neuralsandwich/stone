@@ -10,6 +10,7 @@ import os
 
 class Resource(UserDict):
     """Resource: Stones representation for resources like CSS"""
+
     def __init__(self, site_root, source, target, resource_type=None):
         super().__init__()
         self.data = {

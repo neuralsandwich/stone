@@ -6,6 +6,7 @@ import mistune_contrib.meta as m_meta
 
 class Renderer:
     """Renders Markdown into HTML"""
+
     def __init__(self, _next=None, *args, **kwargs):
         self._next = _next
 
@@ -22,6 +23,7 @@ class Renderer:
         """Renders a page content from Markdown to HTML"""
         meta, page['content'] = m_meta.parse(page['content'])
         page['content'] = mistune.markdown(page['content'])
+
         for key, value in meta.items():
             page[key] = value
 

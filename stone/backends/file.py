@@ -3,8 +3,10 @@
 import os
 import errno
 
+
 class Backend:
     """Stone backend for writing to file"""
+
     def __init__(self, *args, **kwargs):
         try:
             self._root = kwargs['root']

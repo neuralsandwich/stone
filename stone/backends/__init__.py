@@ -3,12 +3,9 @@ import sys
 from pathlib import Path
 
 from stone.plugins import import_plugin
-from stone.backends.file import Backend as FileBackend
+from stone.backends.file import Backend
 
-
-_BUILTIN_BACKENDS = (
-    'file'
-)
+_BUILTIN_BACKENDS = ('file')
 
 
 def import_backend(module_name):

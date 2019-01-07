@@ -82,7 +82,6 @@ class Page(UserDict):  # pylint: disable=too-many-ancestors
     def clear(self):
         self.data = {}
 
-
     def get(self, key, default=None):
         try:
             return self.data[key]

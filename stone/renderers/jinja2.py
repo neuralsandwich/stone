@@ -6,6 +6,7 @@ from jinja2.exceptions import TemplateNotFound
 
 class Renderer:
     """Renders Jinja2 templated input"""
+
     def __init__(self, _next=None, *args, **kwargs):
         self._next = _next
         try:
@@ -29,9 +30,11 @@ class Renderer:
             autoescape=select_autoescape(["html", "xml"]))
 
         try:
-            page['content'] = environment.get_template(page['template']).render(page.data)
+            page['content'] = environment.get_template(
+                page['template']).render(page.data)
         except (TemplateNotFound, KeyError) as template_error:
-            page['content'] = environment.from_string(page['content']).render(page.data)
+            page['content'] = environment.from_string(page['content']).render(
+                page.data)
 
         if self._next:
             return self._next.render(page)
