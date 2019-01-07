@@ -47,8 +47,8 @@ versions will be loaded from the ``$HOME/.stone`` directory.
 Folder Structure
 ----------------
 
-Stone was originally designed to generate the subdomains of half.systems.
-The following is the layout of the sites:
+Stone was originally designed to generate the subdomains of half.systems. The
+following is the layout of the sites:
 
 .. code-block:: sh
 
@@ -74,7 +74,8 @@ By default pages are Markdown file, that can have optional YAML metadata that
 describe the attributes of the page including the title and which template to
 uses. For example:
 
-.. code-block::
+.. code-block:: md
+
   template: base.html
   title: Hello, World
   
