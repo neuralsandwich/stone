@@ -2,9 +2,24 @@
     "version": 1,
     "sites": [
         {
-            "site": "example.com",
-            "source": "source",
-            "target": "target",
+            "site": "www.example.com",
+            "source": "singlepage",
+            "target": "singlepage_rendered",
+            "pages": [
+                {
+                    "source": "index.md",
+                    "target": "index.html"
+                }
+            ]
+        },
+        {
+            "site": "blog.example.com",
+            "source": "blog",
+            "target": "blog_rendered",
+            "type": "blog",
+            "templates": [
+                    "blog_templates"
+            ],
             "pages": [
                 {
                     "source": "index.md",
@@ -12,8 +27,8 @@
                     "page_type": "index"
                 },
                 {
-                    "source": "example.md",
-                    "target": "example.html",
+                    "source": "post.md",
+                    "target": "post.html",
                     "page_type": "post"
                 }
             ]
