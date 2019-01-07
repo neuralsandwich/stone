@@ -29,7 +29,7 @@ def get_version():
 
 
 # Get the long description from the README file
-with open(os.path.join(ROOT, 'README.md'), encoding='utf-8') as f:
+with open(os.path.join(ROOT, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='stone-site',
@@ -37,6 +37,7 @@ setup(name='stone-site',
 
       description='Static site generator',
       long_description=long_description,
+      long_description_content_type="text/x-rst",
 
       # The project's main homepage
       url='https://github.com/NeuralSandwich/stone',
@@ -44,7 +45,6 @@ setup(name='stone-site',
       # Author's details
       author='Sean Jones',
       author_email='sean@half.systems',
-
       license='MIT',
 
       # https://pypi.python.org/pypi?%3Aaction=list_classifiers
