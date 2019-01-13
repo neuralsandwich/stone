@@ -44,6 +44,16 @@ Stone generates sites based on the contents of `site.json <docs/site-json.md>`_.
 Each site can specify which backends, generators and renderers to use, custom
 versions will be loaded from the ``$HOME/.stone`` directory.
 
+Example
+-------
+
+An example project that generates an example landing page and blog is included
+in Stone's project source. you can build it by running:
+
+.. code-block:: sh
+
+  stone example generate
+
 Folder Structure
 ----------------
 
@@ -128,12 +138,46 @@ root folder.
 
   stone root_folder generate
 
-Example
--------
+Backends - File
+---------------
 
-An example project that generates an example landing page and blog is included
-in Stone's project source. you can build it by running:
+The file backend will write out each file to the specified target path.
 
-.. code-block:: sh
+Backends - S3
+-------------
 
-  stone example generate
+The S3 backend will upload each object to the specified bucket. Currently only
+html pages are supported, they will be gzipped and have a default caching time
+of 1 hour.
+
+The minimum required for this backend is:
+
+.. code-block:: json
+
+  "backends": [
+    {
+      "type": "s3",
+      "bucket": "example.com",
+    }
+  ]
+
+The full range of options is:
+
+.. code-block:: json
+
+  "backends": [
+    {
+      "type": "s3",
+      "bucket": "example.com",
+      "prefix": "website"
+      "cache-controller": "max-age:360",
+      # https://tools.ietf.org/html/rfc5646
+      "content-language": "en-GB",
+      "metadata": {
+        "key": "value"
+      }
+      "tags": {
+        "key", "value"
+      }
+    }
+  ]
